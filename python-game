@@ -1,0 +1,297 @@
+from cmu_graphics import *
+background= Rect(0,0,400,400)
+rockList = []
+
+
+class seeingRock(object):
+    def __init__(self,cx,cy,mouseX,mouseY,level):
+        self.cx = cx
+        self.cy = cy
+        self.ds = 4
+        self.opacity=100
+        self.levelGroup = level
+        self.timeToLive = 0
+        
+        self.mouseX=mouseX
+        self.mouseY=mouseY
+        self.angle = angleTo(self.cx,self.cy,mouseX,mouseY)
+        self.drawing = Group()
+        
+        self.drawRock()
+    def update(self):
+        self.drawing.clear()
+        nX,nY = getPointInDir(self.cx,self.cy,self.angle,self.ds)
+        self.cx = nX
+        self.cy = nY
+        self.drawRock()
+    def drawRock(self):
+        self.drawing.add( Circle(self.cx,self.cy,5,fill='red',opacity=self.opacity))
+    
+class level(object):
+    def __init__(self):
+        self.currentLevel = 1
+        self.levelName = 'Bedroom'
+        self.winArea = Star(400,177,10,10,fill='white')
+        self.levelGroup = Group()
+        self.drawLevel()
+        
+    def nextLevel(self):
+        #If player is touching the next level place, then clear level, and draw the next level.
+        self.currentLevel+=1
+        self.drawLevel()
+    def drawLevel(self):
+        self.levelGroup.add(#Master bed
+                            Rect(0,310,5,90,fill='white'),
+                            Rect(0,395,120,5,fill='white'),
+                            Rect(0,310,60,5,fill='white'),
+                            Rect(90,310,30,5,fill='white'),
+                            Rect(115,310,5,90,fill='white'),
+                            #Master bed objects
+                            Rect(60,340,60,35,fill='white'),
+                            Rect(5,315,30,10,fill='white'),
+                            #Double bedroom
+                            Rect(0,160,5,150,fill='white'),
+                            Rect(0,160,120,5,fill='white'),
+                            Rect(115,160,5,70,fill='white'),
+                            Rect(115,250,5,60,fill='white'),
+                            #Double bedroom objects
+                            Rect(5,260,20,50,fill='white'),
+                            Rect(5,210,10,20,fill='white'),
+                            Rect(5,165,40,15,fill='white'),
+                            Rect(65,165,50,20,fill='white'),
+                            Rect(20,180,10,10,fill='white'),
+                            #Living room
+                            Rect(120,160,200,5,fill='white'),
+                            Rect(335,160,5,100,fill='white'),
+                            Rect(120,310,100,5,fill='white'),
+                            #Living room objects
+                            Rect(120,165,15,50,fill='white'),
+                            Rect(120,165,40,15,fill='white'),
+                            Rect(210,165,20,50,fill='white'),
+                            Rect(135,293,25,25,align='center',rotateAngle=45,fill='white'),
+                            Rect(320,180,20,20,align='center',rotateAngle=45,fill='white'),
+                            Circle(180,270,10,fill='white'),
+                            Circle(220,270,10,fill='white'),
+                            Rect(180,260,40,20,fill='white'),
+                            #Bathroom
+                            Rect(260,260,80,5,fill='white'),
+                            Rect(260,290,5,20,fill='white'),
+                            #Bathroom objects
+                            Rect(315,265,20,45,fill='white'),
+                            Rect(280,306,10,15,align='center',fill='white'),
+                            #Kitchen
+                            Rect(260,310,80,5,fill='white'),
+                            Rect(370,310,30,5,fill='white'),
+                            Rect(395,310,5,90,fill='white'),
+                            Rect(220,310,5,90,fill='white'),
+                            Rect(220,395,190,5,fill='white'),
+                            #Kitchen objects
+                            Rect(225,350,20,45,fill='white'),
+                            Rect(225,375,80,20,fill='white'),
+                            Rect(280,330,50,15,fill='white'),
+                            
+                            Rect(290,325,8,8,align='center',fill='white'),
+                            Rect(320,325,8,8,align='center',fill='white'),
+                            Rect(290,350,8,8,align='center',fill='white'),
+                            Rect(320,350,8,8,align='center',fill='white'),
+                            
+                            Rect(305,385,90,10,fill='white'),
+                            #Patio
+                            Rect(320,160,80,5,fill='white'),
+                            Rect(395,190,5,120,fill='white'),
+                            #Patio Objects
+                            Rect(380,260,10,10,align='center',fill='white'),
+                            Rect(380,280,10,10,align='center',fill='white'),
+                            Rect(345,170,25,10,fill='white')
+                            )
+                            
+
+
+class player(object):
+    def __init__(self,cx,cy,radius,level):
+        
+        self.cx = cx
+        self.cy = cy
+        self.radius = radius
+        
+        self.lineCollisionX = cx
+        self.lineCollisionY = cy
+        self.mouseX=0
+        self.mouseY=0
+        
+        self.dotLine = Group()
+        self.testLineGroup = Group()
+        self.levelGroup=level
+        
+        self.drawPlayer()
+        
+    def drawPlayer(self):
+        self.drawing = Group(
+            Circle(self.cx,self.cy,self.radius,fill='white')
+            )
+        self.playerCollisionBoxes()
+        
+    def playerCollisionBoxes(self):
+        self.collisionBoxN = Rect(self.cx-8,self.cy-14,16,6,fill="red",visible=False)
+        self.collisionBoxE = Rect(self.cx+8,self.cy-8,6,16,fill="red",visible=False)
+        self.collisionBoxS = Rect(self.cx-8,self.cy+8,16,6,fill="red",visible=False)
+        self.collisionBoxW = Rect(self.cx-14,self.cy-8,6,16,fill="red",visible=False)
+        self.collisionBoxes = Group(self.collisionBoxN,
+                                    self.collisionBoxE,
+                                    self.collisionBoxS,
+                                    self.collisionBoxW)
+        self.collisionBoxes.visible=False
+        
+        
+    def update(self,key):
+        #Movement for wasd or arrow keys. Tests collision boxes if next movement will go into a wall, and then not do that if true.
+        if(key=='w' or key=='up'):
+            self.cy-=5
+            if(self.collisionBoxN.hitsShape(self.levelGroup)==True or self.collisionBoxN.top<=0):
+                self.cy+=5
+        if(key=='s' or key=='down'):
+            self.cy+=5
+            if(self.collisionBoxS.hitsShape(self.levelGroup)==True or self.collisionBoxS.bottom>=400):
+                self.cy-=5
+        if(key=='a' or key=='left'):
+            self.cx-=5
+            if(self.collisionBoxW.hitsShape(self.levelGroup)==True or self.collisionBoxW.left<=0):
+                self.cx+=5
+        if(key=='d' or key=='right'):
+            self.cx+=5
+            if(self.collisionBoxE.hitsShape(self.levelGroup)==True or self.collisionBoxE.right>=400):
+                self.cx-=5
+        for img in self.drawing:
+            self.drawing.remove(img)
+        self.drawPlayer()
+        self.testLine(self.mouseX,self.mouseY)
+            
+    def testLine(self,mouseX,mouseY):
+        self.mouseX=mouseX
+        self.mouseY=mouseY
+        for img in self.dotLine:
+            self.testLineGroup.remove(img)
+        #Get distance and angle to mouse
+        mouseDist = distance(self.cx,self.cy,self.mouseX,self.mouseY)
+        if(mouseDist>=40):
+            mouseDist=40
+        angle = angleTo(self.cx,self.cy,mouseX,mouseY)
+        #The fineness of the line to platforms collision
+        testDist = mouseDist/4
+        #Change in x and y
+        dx,dy = getPointInDir(self.cx,self.cy,angle,testDist)
+        testDX = dx-self.cx
+        testDY = dy-self.cy
+        #Line to be tested for collision
+        testLine = Line(self.cx,self.cy,self.cx+testDX,self.cy+testDY, opacity=100, fill='red', lineWidth = 3)
+        collisionX = testLine.x2
+        collisionY = testLine.y2
+        #Increase testLine until it touches a platform
+        for i in range(3):
+            if(testLine.hitsShape(self.levelGroup) == False):
+                testLine.x2 += testDX
+                collisionX = testLine.x2
+                testLine.y2 += testDY
+                collisionY = testLine.y2
+            else:
+                break
+        #Remove testLine
+        testLine.visible = False
+        self.lineCollisionX = collisionX 
+        self.lineCollisionY = collisionY
+        
+    def drawDottedLine(self):
+        #Remove previous dotted lines
+        for img in self.dotLine:
+            self.dotLine.remove(img)
+        endX = self.lineCollisionX
+        endY = self.lineCollisionY
+        #Get where the testLine ends and get the space between each dot
+        dotLineDX = (endX-self.cx)/3
+        dotLineDY = (endY-self.cy)/3
+        #Draw the dots, backup hit detection.
+        for i in range(2):
+            nextDot = Circle(self.cx+(dotLineDX*i),self.cy+(dotLineDY*i),3,opacity=100,fill='white')
+            if(nextDot.hitsShape(self.levelGroup)):
+                nextDot.visible = False
+                break
+            else:
+                self.dotLine.add(nextDot)
+
+#Instructions
+app.timer=60*app.stepsPerSecond
+Label('You are a blind person sleeping over for the night.',200,30,fill='white')
+Label('Use WASD or arrows to move the player',200,40,fill='white')
+Label('Click the mouse to shoot a seeing ball',200,50,fill='white')
+Label( 'You have 60 seconds to reach the star and exit the house.',200,60,fill='white')
+app.timerLabel=Label(app.timer,200,80,fill='white')
+
+Level = level()
+Player = player(30,370,8,Level.levelGroup)
+Level.levelGroup.opacity=0
+
+def onStep():
+    #Update the opacity of currently seen objects
+    for obj in Level.levelGroup:
+        if(obj.opacity>9):
+            obj.opacity-=10
+    
+    Player.drawDottedLine()
+    second=pythonRound(app.timer/30,1)
+    app.timerLabel.value=second
+    if(app.timer<=0):
+        Label('You didn\'t get out in time',200,120,fill='white',size=30,bold=True)
+        app.stop()
+    if(Player.drawing.hitsShape(Level.winArea)):
+        Level.levelGroup.fill='white'
+        Level.levelGroup.opacity=100
+        Label('You exited the house!',200,120,fill='white',size=30,bold=True)
+        app.stop()
+        
+    #Update where the ball is moving
+    for rock in rockList:
+        if(rock.opacity>(100/30)+1):
+            rock.opacity-=100/30
+            pass
+        if(rock.timeToLive>=1*app.stepsPerSecond):
+            rock.drawing.clear()
+            rockList.remove(rock)
+        elif(rock.drawing.centerX>410 or rock.drawing.centerX<-10 or rock.drawing.centerY>410 or rock.drawing.centerY<-10):
+            rock.drawing.clear()
+            rockList.remove(rock)
+        elif(rock.drawing.hitsShape(Level.levelGroup)==True):
+            for shape in Level.levelGroup:
+                if(rock.drawing.hitsShape(shape)==True):
+                    shape.opacity=100
+                    rock.drawing.clear()
+                    rockList.remove(rock)
+        else:
+            rock.update()
+            rock.timeToLive+=1
+            
+    app.timer-=1    
+    Player.drawing.toFront()
+    
+    
+def onMouseMove(mouseX,mouseY):
+    #Update player aim to follow the mouse
+    Player.testLine(mouseX,mouseY)
+
+ 
+def onMousePress(mouseX,mouseY):
+    #Shoot the ball wherever the person is aiming at
+    if(mouseY>35):
+        rock1 = seeingRock(Player.cx,Player.cy,mouseX,mouseY,Level.levelGroup)
+        rockList.append(rock1)
+
+    
+    
+def onKeyHold(keys):
+    #Update where the player is
+    for key in keys:
+        Player.update(key)
+
+
+
+
+
